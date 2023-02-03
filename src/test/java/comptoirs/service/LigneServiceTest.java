@@ -9,6 +9,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import jakarta.validation.ConstraintViolationException;
 
+import java.util.NoSuchElementException;
+
 @SpringBootTest
  // Ce test est basé sur le jeu de données dans "test_data.sql"
 class LigneServiceTest {
@@ -36,5 +38,33 @@ class LigneServiceTest {
         assertThrows(ConstraintViolationException.class, 
             () -> service.ajouterLigne(NUMERO_COMMANDE_PAS_LIVREE, REFERENCE_PRODUIT_DISPONIBLE_1, 0),
             "La quantite d'une ligne doit être positive");
+    }
+
+    @Test
+    void laCommandeDoitExister() {
+        assertThrows(NoSuchElementException.class,
+            () -> service.ajouterLigne(0, REFERENCE_PRODUIT_DISPONIBLE_1, 1),
+            "La commande doit exister");
+    }
+
+    @Test
+    void leProduitDoitExister() {
+        assertThrows(NoSuchElementException.class,
+                () -> service.ajouterLigne(NUMERO_COMMANDE_PAS_LIVREE, 0, 1),
+                "Le produit doit exister");
+    }
+
+    @Test
+    void leProduitDoitEtreDisponible() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.ajouterLigne(NUMERO_COMMANDE_PAS_LIVREE, REFERENCE_PRODUIT_INDISPONIBLE, 1),
+                "Le produit doit être disponible");
+    }
+
+    @Test
+    void onNePeutPasAjouterDeLignesSiLivre() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.ajouterLigne(NUMERO_COMMANDE_DEJA_LIVREE, REFERENCE_PRODUIT_DISPONIBLE_1, 1),
+                "La commande doit être en cours");
     }
 }

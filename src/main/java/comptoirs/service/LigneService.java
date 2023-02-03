@@ -31,7 +31,7 @@ public class LigneService {
      *     Enregistre une nouvelle ligne de commande pour une commande connue par sa clé,
      *     Incrémente la quantité totale commandée (Produit.unitesCommandees) avec la quantite à commander
      * Règles métier :
-     *     - le produit référencé doit exister
+     *     - le produit référencé doit exister et être disponible
      *     - la commande doit exister
      *     - la commande ne doit pas être déjà envoyée (le champ 'envoyeele' doit être null)
      *     - la quantité doit être positive
@@ -45,6 +45,32 @@ public class LigneService {
      */
     @Transactional
     Ligne ajouterLigne(Integer commandeNum, Integer produitRef, @Positive int quantite) {
-        throw new UnsupportedOperationException("Cette méthode n'est pas implémentée");
+        var commande = commandeDao.findById(commandeNum).orElseThrow();
+        var produit = produitDao.findById(produitRef).orElseThrow();
+        // La commande doit exister
+        if (commande == null) {
+            throw new IllegalArgumentException("Commande inconnue");
+        }
+        // La commande ne doit pas être déjà envoyée
+        if (commande.getEnvoyeele() != null) {
+            throw new IllegalArgumentException("Commande déjà envoyée");
+        }
+        // Le produit doit exister et être disponible
+        if (produit == null || produit.getIndisponible()) {
+            throw new IllegalArgumentException("Produit indisponible");
+        }
+        // Il faut avoir une quantite en stock du produit suffisante
+        if (produit.getUnitesEnStock() < quantite) {
+            throw new IllegalArgumentException("Quantite en stock insuffisante");
+        }
+        // Incrémente la quantité totale commandée (Produit.unitesCommandees) avec la quantite à commander
+        produit.setUnitesCommandees(produit.getUnitesCommandees() + quantite);
+        // Enregistre la ligne de commande
+        var ligne = new Ligne();
+        ligne.setCommande(commande);
+        ligne.setProduit(produit);
+        ligne.setQuantite(quantite);
+        ligneDao.save(ligne);
+        return ligne;
     }
 }
